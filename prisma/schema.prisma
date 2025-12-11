@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id String @id @default(uuid())
+  username String @unique
+  passwordHash String
+  createdAt DateTime @default(now())
+
+  @@map("users")
+}
+
+model Photo{
+  id String @id @default(uuid())
+  title String
+  description String?
+  location String?
+  featured Boolean @default(false)
+  sortOrder Int @default(0) @map("sort_order")
+  metadata Json? @default("{}")
+
+  // Three Size of the photo URLs
+  urlSmall String @map("url_small")
+  urlMedium String @map("url_medium")
+  urlLarge String @map("url_large")
+  
+  // Date Related Fields
+  createdAt DateTime @default(now()) @map("created_at")
+  capturedAt DateTime? @map("captured_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tags        PhotoTags[]
+  collections PhotoCollections[]
+
+  @@map("photos")
+}
+
+model PhotoTags{
+  photoId String @map("photo_id")
+  tag String
+
+  // onDelete Cascade to remove tags when photo is deleted
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  
+  @@id([photoId, tag])
+  @@index([tag])
+  @@map("photo_tags")
+
+}
+
+model Collections{
+  id String @id @default(uuid())
+  slug String @unique
+  name String
+  description String?
+  createdAt DateTime @default(now()) @map("created_at") 
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  photos PhotoCollections[]
+
+  @@map("collections")
+}
+
+model PhotoCollections{
+  photoId String @map("photo_id")
+  collectionId String @map("collection_id")
+
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
+  collection Collections @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([photoId, collectionId])
+  @@index([collectionId])
+  @@map("photo_collections")
+}
