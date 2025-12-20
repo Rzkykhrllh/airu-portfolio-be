@@ -95,3 +95,47 @@ export const getPhotoById = asyncHandler(async (
 })
   
 
+export const createPhoto = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.body);
+    const data = createPhotoSchema.parse(req.body)
+
+    // Dummy Image Url
+    const dummyImageUrl = {
+      urlSmall: `https://example.com/${Date.now()}/small.jpg`,
+      urlMedium: `https://example.com/${Date.now()}/medium.jpg`,
+      urlLarge: `https://example.com/${Date.now()}/large.jpg`
+    }
+
+    const photo = await prisma.photo.create({
+      data: {
+        title: data.title,
+        description: data.description,
+        location: data.location,
+        featured: data.featured,
+        tags: data.tags ? {
+          create: data.tags.map(tag => ({ tag }))
+        }: undefined,
+        ...dummyImageUrl,
+        collections: data.collectionIds ? {
+          create: data.collectionIds.map(collectionId => ({
+            collection: { connect: { id: collectionId } }
+          }))
+        } : undefined
+      },
+      include: {
+        tags: true,
+        collections: {
+          include: {
+            collection: true
+          }
+        }
+      } 
+    })
+
+    res.status(201).json({
+      success: true,
+      data: photo
+    });
+  }
+)
