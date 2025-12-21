@@ -17,3 +17,13 @@ export const getPhotoSchema = z.object({
   tag: z.array(z.string()).optional(),
   collectionId: z.string().optional(),
 });
+
+export const updatePhotoSchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  featured: z.boolean().optional(),
+  tags: z.array(z.string()).optional(),
+  collectionIds: z.array(z.string()).optional(),
+  capturedAt: z.string().datetime().optional(),
+});
