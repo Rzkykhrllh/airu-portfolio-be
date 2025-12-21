@@ -43,6 +43,7 @@ model Photo{
   capturedAt DateTime? @map("captured_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  // Relations
   tags        PhotoTags[]
   collections PhotoCollections[]
 
