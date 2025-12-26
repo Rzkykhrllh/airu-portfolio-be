@@ -6,7 +6,7 @@ export const transformCollection = (collection: any) => {
     description: collection.description,
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
-    photos: collection.photos.map((cp: any) => cp.photo) || [],
+    photos: collection.photos?.map((cp: any) => cp.photo) || [], // Extract photo objects, Photos not always included
     photoCount: collection._count?.photos,
   };
 }
