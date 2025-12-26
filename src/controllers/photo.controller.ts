@@ -95,7 +95,26 @@ export const getPhotoById = asyncHandler(
 
 export const createPhoto = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
+    
+    // File existance check
+    if (!req.file){
+      return res.status(400).json({
+        success: false,
+        message: "Image file is required"
+      })
+    }
+
+
     const data = createPhotoSchema.parse(req.body);
+
+    // File info from multer
+    const file = req.file;
+    console.log("File received:", {
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+        buffer: file.buffer.length, // File ada di memory sebagai Buffer
+      });
 
     // Dummy Image Url
     const dummyImageUrl = {
@@ -103,6 +122,9 @@ export const createPhoto = asyncHandler(
       urlMedium: `https://example.com/${Date.now()}/medium.jpg`,
       urlLarge: `https://example.com/${Date.now()}/large.jpg`,
     };
+
+    // TODO: Upload file into r2 storage and get the URL
+    // const imageURL = await uploadToR2(file.buffer, file.mimetype);
 
     const photo = await prisma.photo.create({
       data: {
