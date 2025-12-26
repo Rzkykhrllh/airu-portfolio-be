@@ -8,6 +8,7 @@ import {
   getCollectionSchema,
   updateCollectionSchema,
 } from "../validator/collection.validator";
+import { transformCollection, transformCollections } from "../utils/transformers";
 
 export const getCollections = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -43,7 +44,7 @@ export const getCollections = asyncHandler(
 
     res.json({
       success: true,
-      data: collections,
+      data: transformCollections(collections),
       pagination: {
         page,
         limit,
@@ -119,7 +120,7 @@ export const createCollection = asyncHandler(
 
     res.status(201).json({
       success: true,
-      data: newCollection,
+      data: transformCollection(newCollection),
     });
   }
 );
@@ -150,7 +151,7 @@ export const updateCollection = asyncHandler(
 
     res.json({
       success: true,
-      data: updatedCollection,
+      data: transformCollection(updatedCollection),
     });
   }
 );
