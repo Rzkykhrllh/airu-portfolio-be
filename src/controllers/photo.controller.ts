@@ -117,10 +117,11 @@ export const createPhoto = asyncHandler(
       });
 
     // Dummy Image Url
+    const imageId = Math.floor(Math.random() * 1000);
     const dummyImageUrl = {
-      urlSmall: `https://example.com/${Date.now()}/small.jpg`,
-      urlMedium: `https://example.com/${Date.now()}/medium.jpg`,
-      urlLarge: `https://example.com/${Date.now()}/large.jpg`,
+      urlSmall: `https://picsum.photos/id/${imageId}/800/600`,
+      urlMedium: `https://picsum.photos/id/${imageId}/1200/900`,
+      urlLarge: `https://picsum.photos/id/${imageId}/1600/1200`,
     };
 
     // TODO: Upload file into r2 storage and get the URL
