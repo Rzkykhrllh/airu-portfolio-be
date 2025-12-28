@@ -71,6 +71,7 @@ export const getCollectionsbySlug = asyncHandler(
                 urlSmall: true,
                 urlMedium: true,
                 urlLarge: true,
+                tags: true,
               },
             },
           },
@@ -85,7 +86,7 @@ export const getCollectionsbySlug = asyncHandler(
 
     res.json({
       success: true,
-      data: collection,
+      data: transformCollection(collection),
     });
   }
 );
@@ -156,6 +157,37 @@ export const updateCollection = asyncHandler(
   }
 );
 
+export const updateCollectionBySlug = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
+    const data = updateCollectionSchema.parse(req.body);
+
+    const collection = await prisma.collections.findUnique({
+      where: { slug },
+    });
+
+    if (!collection) {
+      throw new NotFoundError("Collection not found");
+    }
+
+    const updatedCollection = await prisma.collections.update({
+      where: { slug },
+      data: {
+        name: data.name,
+        description: data.description,
+      },
+      include: {
+        _count: { select: { photos: true } },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: transformCollection(updatedCollection),
+    });
+  }
+);
+
 export const deleteCollection = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
@@ -170,6 +202,30 @@ export const deleteCollection = asyncHandler(
 
     await prisma.collections.delete({
       where: { id },
+    });
+
+    res.json({
+      success: true,
+      message: "Collection deleted successfully",
+    });
+  }
+);
+
+export const deleteCollectionBySlug = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
+    console.log("slug woyyy", slug);
+
+    const collection = await prisma.collections.findUnique({
+      where: { slug },
+    });
+
+    if (!collection) {
+      throw new NotFoundError("Collection not found");
+    }
+
+    await prisma.collections.delete({
+      where: { slug },
     });
 
     res.json({
