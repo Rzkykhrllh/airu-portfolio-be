@@ -13,6 +13,11 @@ export const createPhotoSchema = z.object({
       return val === "true";
     }),
 
+  visibility: z
+    .enum(["PUBLIC", "COLLECTION_ONLY", "PRIVATE"])
+    .optional()
+    .default("PUBLIC"),
+
   tags: z.array(z.string()).optional(),
 
   collectionIds: z.array(z.string()).optional(),
@@ -50,6 +55,7 @@ export const getPhotoSchema = z.object({
     .optional(),
   tag: z.array(z.string()).optional(),
   collectionId: z.string().optional(),
+  scope: z.enum(['public', 'collection', 'admin']).optional().default('public'),
 });
 
 export const updatePhotoSchema = z.object({
@@ -57,6 +63,7 @@ export const updatePhotoSchema = z.object({
   description: z.string().optional(),
   location: z.string().optional(),
   featured: z.boolean().optional(),
+  visibility: z.enum(["PUBLIC", "COLLECTION_ONLY", "PRIVATE"]).optional(),
   tags: z.array(z.string()).optional(),
   collectionIds: z.array(z.string()).optional(),
   capturedAt: z.string().datetime().optional(),

@@ -24,6 +24,11 @@ export const getCollections = asyncHandler(
         orderBy: { createdAt: "desc" },
         include: {
           photos: {
+            where: {
+              photo: {
+                visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] }, // Show PUBLIC and COLLECTION_ONLY
+              },
+            },
             include: {
               photo: {
                 select: {
@@ -63,6 +68,11 @@ export const getCollectionsbySlug = asyncHandler(
       where: { slug }, //Get Collection by Slug
       include: {
         photos: {
+          where: {
+            photo: {
+              visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] }, // Show PUBLIC and COLLECTION_ONLY
+            },
+          },
           include: {
             photo: {
               select: {

@@ -15,6 +15,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PhotoVisibility {
+  PUBLIC          // Show everywhere (gallery + collections)
+  COLLECTION_ONLY // Only in collections, not in homepage gallery
+  PRIVATE         // Admin only (draft/hidden)
+}
+
 model User {
   id String @id @default(uuid())
   username String @unique
@@ -30,6 +36,7 @@ model Photo{
   description String?
   location String?
   featured Boolean @default(false)
+  visibility PhotoVisibility @default(PUBLIC)
   sortOrder Int @default(0) @map("sort_order")
   metadata Json? @default("{}")
 

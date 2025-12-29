@@ -31,6 +31,7 @@ export const transformPhoto = (photo: any) => {
     description: photo.description,
     location: photo.location,
     featured: photo.featured,
+    visibility: photo.visibility,
     sortOrder: photo.sortOrder,
     metadata: photo.metadata,
     urlSmall: photo.urlSmall,

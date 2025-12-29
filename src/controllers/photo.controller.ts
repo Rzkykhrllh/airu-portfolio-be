@@ -14,12 +14,22 @@ import { transformPhoto, transformPhotos } from "../utils/transformers";
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = getPhotoSchema.parse(req.query);
-    const { page, limit, featured, tag, collectionId } = query;
+    const { page, limit, featured, tag, collectionId, scope } = query;
 
     const skip = (page - 1) * limit;
 
     // Query where clause
     const where: any = {};
+
+    // Filter by scope (visibility levels)
+    if (scope === 'public') {
+      where.visibility = 'PUBLIC'; // Public only
+    } else if (scope === 'collection') {
+      where.visibility = { in: ['PUBLIC', 'COLLECTION_ONLY'] }; // Public + Collection
+    } else if (scope === 'admin') {
+      // Admin: no visibility filter, show all (PUBLIC + COLLECTION_ONLY + PRIVATE)
+      // Note: This should be protected by authentication middleware in production
+    }
 
     if (featured !== undefined) {
       where.featured = featured;
@@ -123,6 +133,7 @@ export const createPhoto = asyncHandler(
         description: data.description,
         location: data.location,
         featured: data.featured,
+        visibility: data.visibility,
         capturedAt: data.capturedAt,
         metadata: data.exif || {}, // Store EXIF data in metadata field
         ...imageUrl,
@@ -181,6 +192,7 @@ export const updatePhoto = asyncHandler(
         description: data.description,
         location: data.location,
         featured: data.featured,
+        visibility: data.visibility,
         capturedAt: data.capturedAt,
 
         //  Update tags - Delete non included and add new ones
