@@ -19,11 +19,11 @@ interface ImageUrls {
   urlLarge: string;
 }
 
-// Size Definitions
+// Size Definitions with format and quality
 const sizes = {
-  small: 300,
-  medium: 1600,
-  large: 2400,
+  small: { width: 300, quality: 75, format: 'webp' as const },
+  medium: { width: 1600, quality: 80, format: 'webp' as const },
+  large: { width: 2400, quality: 85, format: 'jpeg' as const },
 };
 
 /**
@@ -42,24 +42,48 @@ export async function uploadImageToR2(
 
 
   const uploadPromises = Object.entries(sizes).map(
-    async ([sizeLabel, width]) => {
+    async ([sizeLabel, config]) => {
       // Resize Images
-      const resizedBuffer = await sharp(fileBuffer)
-        .resize(width, null, {
+      let sharpInstance = sharp(fileBuffer)
+        .resize(config.width, null, {
           withoutEnlargement: true,
           fit: "inside",
-        })
-        .jpeg({ quality: 90 })
-        .toBuffer();
+        });
+
+      // Apply format-specific settings
+      let resizedBuffer: Buffer;
+      let extension: string;
+      let contentType: string;
+
+      if (config.format === 'webp') {
+        resizedBuffer = await sharpInstance
+          .webp({
+            quality: config.quality,
+            effort: 4  // 0-6, higher = better compression but slower
+          })
+          .toBuffer();
+        extension = 'webp';
+        contentType = 'image/webp';
+      } else {
+        resizedBuffer = await sharpInstance
+          .jpeg({
+            quality: config.quality,
+            progressive: true,
+            mozjpeg: true
+          })
+          .toBuffer();
+        extension = 'jpg';
+        contentType = 'image/jpeg';
+      }
 
       // Upload to R2
-      const key = `photos/${imageId}-${sizeLabel}.jpg`;
+      const key = `photos/${imageId}-${sizeLabel}.${extension}`;
       await r2Client.send(
         new PutObjectCommand({
           Bucket: process.env.R2_BUCKET!,
           Key: key,
           Body: resizedBuffer,
-          ContentType: "image/jpeg",
+          ContentType: contentType,
         })
       );
 
