@@ -8,6 +8,7 @@ import {
   updatePhotoSchema,
 } from "../validator/photo.validator";
 import { success } from "zod";
+import { uploadImageToR2 } from "../services/upload.services";
 
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -95,37 +96,25 @@ export const getPhotoById = asyncHandler(
 
 export const createPhoto = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
-    
     // File existance check
-    if (!req.file){
+    if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: "Image file is required"
-      })
+        message: "Image file is required",
+      });
     }
 
-
     const data = createPhotoSchema.parse(req.body);
+    const imageUrl = await uploadImageToR2(req.file.buffer, req.file.mimetype);
 
     // File info from multer
     const file = req.file;
     console.log("File received:", {
-        originalname: file.originalname,
-        mimetype: file.mimetype,
-        size: file.size,
-        buffer: file.buffer.length, // File ada di memory sebagai Buffer
-      });
-
-    // Dummy Image Url
-    const imageId = Math.floor(Math.random() * 1000);
-    const dummyImageUrl = {
-      urlSmall: `https://picsum.photos/id/${imageId}/800/600`,
-      urlMedium: `https://picsum.photos/id/${imageId}/1200/900`,
-      urlLarge: `https://picsum.photos/id/${imageId}/1600/1200`,
-    };
-
-    // TODO: Upload file into r2 storage and get the URL
-    // const imageURL = await uploadToR2(file.buffer, file.mimetype);
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      buffer: file.buffer.length, // File ada di memory sebagai Buffer
+    });
 
     const photo = await prisma.photo.create({
       data: {
@@ -133,7 +122,7 @@ export const createPhoto = asyncHandler(
         description: data.description,
         location: data.location,
         featured: data.featured,
-        ...dummyImageUrl,
+        ...imageUrl,
 
         // Create data into related tables
         tags: data.tags
@@ -198,7 +187,7 @@ export const updatePhoto = asyncHandler(
                 tag: {
                   notIn: data.tags,
                 },
-              }, 
+              },
               createMany: {
                 data: data.tags.map((tag) => ({ tag })),
                 skipDuplicates: true,
