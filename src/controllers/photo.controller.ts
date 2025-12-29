@@ -9,6 +9,7 @@ import {
 } from "../validator/photo.validator";
 import { success } from "zod";
 import { uploadImageToR2, deleteImageFromR2 } from "../services/upload.services";
+import { transformPhoto, transformPhotos } from "../utils/transformers";
 
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -56,7 +57,7 @@ export const getPhotos = asyncHandler(
 
     res.json({
       success: true,
-      data: photos,
+      data: transformPhotos(photos),
       pagination: {
         page,
         limit,
@@ -89,7 +90,7 @@ export const getPhotoById = asyncHandler(
 
     res.json({
       success: true,
-      data: photo,
+      data: transformPhoto(photo),
     });
   }
 );
@@ -122,6 +123,8 @@ export const createPhoto = asyncHandler(
         description: data.description,
         location: data.location,
         featured: data.featured,
+        capturedAt: data.capturedAt,
+        metadata: data.exif || {}, // Store EXIF data in metadata field
         ...imageUrl,
 
         // Create data into related tables
@@ -153,7 +156,7 @@ export const createPhoto = asyncHandler(
 
     res.status(201).json({
       success: true,
-      data: photo,
+      data: transformPhoto(photo),
     });
   }
 );
@@ -224,7 +227,7 @@ export const updatePhoto = asyncHandler(
 
     res.json({
       success: true,
-      data: updatedPhoto,
+      data: transformPhoto(updatedPhoto),
     });
   }
 );

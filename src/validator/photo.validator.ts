@@ -17,6 +17,20 @@ export const createPhotoSchema = z.object({
 
   collectionIds: z.array(z.string()).optional(),
 
+  // Accept EXIF as JSON string, parse to object
+  exif: z
+    .string()
+    .optional()
+    .transform((val) => {
+      if (!val || val === "") return undefined;
+      try {
+        return JSON.parse(val);
+      } catch (error) {
+        console.error("Failed to parse EXIF data:", error);
+        return undefined;
+      }
+    }),
+
   capturedAt: z.string().optional().transform(val => {
     if (!val) return undefined;
 
