@@ -8,7 +8,7 @@ import {
   updatePhotoSchema,
 } from "../validator/photo.validator";
 import { success } from "zod";
-import { uploadImageToR2 } from "../services/upload.services";
+import { uploadImageToR2, deleteImageFromR2 } from "../services/upload.services";
 
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -233,6 +233,7 @@ export const deletePhoto = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 
+    // Get photo (need URLs for R2 deletion)
     const photo = await prisma.photo.findUnique({
       where: { id },
     });
@@ -241,6 +242,14 @@ export const deletePhoto = asyncHandler(
       throw new NotFoundError("Photo not found");
     }
 
+    // Delete images from R2
+    await deleteImageFromR2({
+      urlSmall: photo.urlSmall,
+      urlMedium: photo.urlMedium,
+      urlLarge: photo.urlLarge,
+    });
+
+    // Delete from database
     await prisma.photo.delete({
       where: { id },
     });

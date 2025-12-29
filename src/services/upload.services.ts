@@ -1,5 +1,5 @@
 import sharp from "sharp";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 
 // AWS S3 Configuration
@@ -56,7 +56,7 @@ export async function uploadImageToR2(
       const key = `photos/${imageId}-${sizeLabel}.jpg`;
       await r2Client.send(
         new PutObjectCommand({
-          Bucket: process.env.R2_PHOTOGRAPH_BUCKET!,
+          Bucket: process.env.R2_BUCKET!,
           Key: key,
           Body: resizedBuffer,
           ContentType: "image/jpeg",
@@ -66,7 +66,7 @@ export async function uploadImageToR2(
       // Return URL
       return {
         sizeLabel,
-        url: `${process.env.R2_PHOTOGRAPH_BUCKET_PUBLIC_URL}/${key}`,
+        url: `${process.env.R2_PUBLIC_URL}/${key}`,
       };
     }
   );
@@ -79,4 +79,40 @@ export async function uploadImageToR2(
     urlMedium: result.find((r) => r.sizeLabel === "medium")!.url,
     urlLarge: result.find((r) => r.sizeLabel === "large")!.url,
   };
+}
+
+/**
+ * Delete image files from R2
+ * @param imageUrls - Object with urlSmall, urlMedium, urlLarge
+ */
+export async function deleteImageFromR2(imageUrls: {
+  urlSmall: string;
+  urlMedium: string;
+  urlLarge: string;
+}): Promise<void> {
+  const urls = [imageUrls.urlSmall, imageUrls.urlMedium, imageUrls.urlLarge];
+
+  const deletePromises = urls.map(async (url) => {
+    try {
+      // Extract key from URL
+      // Example: https://pub-abc.r2.dev/photos/uuid-small.jpg -> photos/uuid-small.jpg
+      const urlObj = new URL(url);
+      const key = urlObj.pathname.substring(1); // Remove leading "/"
+
+      // Delete from R2
+      await r2Client.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.R2_BUCKET!,
+          Key: key,
+        })
+      );
+
+      console.log(`✅ Deleted from R2: ${key}`);
+    } catch (error) {
+      console.error(`❌ Failed to delete ${url}:`, error);
+      // Don't throw - continue deleting other files even if one fails
+    }
+  });
+
+  await Promise.all(deletePromises);
 }
