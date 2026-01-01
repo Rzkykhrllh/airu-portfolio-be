@@ -1,8 +1,7 @@
 services:
-
   postgres:
     image: postgres:13
-    container_name: portfolio-db
+    container_name: airu-portfolio-db
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -13,5 +12,36 @@ services:
       - .env
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - airu-portfolio-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: airu-portfolio-api
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - airu-portfolio-network
+    restart: unless-stopped
+
 volumes:
   pgdata:
+
+networks:
+  airu-portfolio-network:
+    driver: bridge
