@@ -18,6 +18,7 @@ export const createCollectionSchema = z.object({
 export const getCollectionSchema = z.object({
   page: z.string().default("1").transform(Number),
   limit: z.string().default("100").transform(Number),
+  scope: z.enum(['public', 'admin']).optional().default('public'),
 });
 
 export const updateCollectionSchema = z.object({

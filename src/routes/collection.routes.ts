@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateToken } from "../middlewares/auth.middleware";
+import { authenticateToken, optionalAuth } from "../middlewares/auth.middleware";
 import {
   createCollection,
   deleteCollection,
@@ -12,9 +12,9 @@ import {
 
 const router = Router();
 
-// Public Routes
-router.get("/", getCollections);
-router.get("/slug/:slug", getCollectionsbySlug);
+// Public Routes (with optional auth for scope=admin)
+router.get("/", optionalAuth, getCollections);
+router.get("/slug/:slug", optionalAuth, getCollectionsbySlug);
 
 // Protected Routes
 router.post("/", authenticateToken, createCollection);

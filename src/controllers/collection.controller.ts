@@ -14,8 +14,35 @@ export const getCollections = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = getCollectionSchema.parse(req.query);
 
-    const { page, limit } = query;
+    const { page, limit, scope } = query;
     const skip = (page - 1) * limit;
+
+    // Check authentication
+    const isAuthenticated = !!(req as any).user;
+
+    // Strict auth check for admin scope
+    if (scope === 'admin' && !isAuthenticated) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required for admin scope',
+      });
+    }
+
+    // Determine photo visibility filter based on scope
+    let photoVisibilityFilter: any;
+
+    if (scope === 'admin') {
+      // Admin (authenticated): show ALL photos (no filter)
+      photoVisibilityFilter = {};
+    } else {
+      // scope === 'public' (default)
+      // Public + Collection only
+      photoVisibilityFilter = {
+        photo: {
+          visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] },
+        },
+      };
+    }
 
     const [collections, total] = await Promise.all([
       prisma.collections.findMany({
@@ -24,11 +51,7 @@ export const getCollections = asyncHandler(
         orderBy: { createdAt: "desc" },
         include: {
           photos: {
-            where: {
-              photo: {
-                visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] }, // Show PUBLIC and COLLECTION_ONLY
-              },
-            },
+            where: photoVisibilityFilter,
             include: {
               photo: {
                 select: {
@@ -63,16 +86,41 @@ export const getCollections = asyncHandler(
 export const getCollectionsbySlug = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { slug } = req.params;
+    const query = getCollectionSchema.parse(req.query);
+    const { scope } = query;
+
+    // Check authentication
+    const isAuthenticated = !!(req as any).user;
+
+    // Strict auth check for admin scope
+    if (scope === 'admin' && !isAuthenticated) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required for admin scope',
+      });
+    }
+
+    // Determine photo visibility filter based on scope
+    let photoVisibilityFilter: any;
+
+    if (scope === 'admin') {
+      // Admin (authenticated): show ALL photos (no filter)
+      photoVisibilityFilter = {};
+    } else {
+      // scope === 'public' (default)
+      // Public + Collection only
+      photoVisibilityFilter = {
+        photo: {
+          visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] },
+        },
+      };
+    }
 
     const collection = await prisma.collections.findUnique({
       where: { slug }, //Get Collection by Slug
       include: {
         photos: {
-          where: {
-            photo: {
-              visibility: { in: ['PUBLIC', 'COLLECTION_ONLY'] }, // Show PUBLIC and COLLECTION_ONLY
-            },
-          },
+          where: photoVisibilityFilter,
           include: {
             photo: {
               select: {

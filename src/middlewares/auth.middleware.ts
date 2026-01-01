@@ -47,4 +47,41 @@ export const authenticateToken = (
   }
 }
 
+/**
+ * Optional authentication middleware
+ * Tries to authenticate if token is present, but doesn't fail if absent
+ * Used for routes that support both public and authenticated access
+ */
+export const optionalAuth = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // Get token from Authorization header
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(" ")[1];
+
+    // If no token, just continue without setting req.user
+    if (!token) {
+      return next();
+    }
+
+    // Verify token
+    const decoded = verifyToken(token);
+
+    // Attach user info to request object
+    req.user = {
+      userId: decoded.userId,
+      username: decoded.username,
+    };
+
+    next();
+  } catch (error) {
+    // Invalid token - just continue without setting req.user
+    // Don't return error, let the route handler decide
+    next();
+  }
+};
+
 // Authentication middleware to protect routes

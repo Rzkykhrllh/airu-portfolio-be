@@ -18,17 +18,31 @@ export const getPhotos = asyncHandler(
 
     const skip = (page - 1) * limit;
 
+    // Check authentication
+    const isAuthenticated = !!(req as any).user;
+
+    // Strict auth check for admin scope
+    if (scope === 'admin' && !isAuthenticated) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required for admin scope',
+      });
+    }
+
     // Query where clause
     const where: any = {};
 
     // Filter by scope (visibility levels)
-    if (scope === 'public') {
-      where.visibility = 'PUBLIC'; // Public only
+    if (scope === 'admin') {
+      // Admin (authenticated): show ALL photos (no filter)
+      // where.visibility = undefined (no filter)
     } else if (scope === 'collection') {
-      where.visibility = { in: ['PUBLIC', 'COLLECTION_ONLY'] }; // Public + Collection
-    } else if (scope === 'admin') {
-      // Admin: no visibility filter, show all (PUBLIC + COLLECTION_ONLY + PRIVATE)
-      // Note: This should be protected by authentication middleware in production
+      // Public + Collection only
+      where.visibility = { in: ['PUBLIC', 'COLLECTION_ONLY'] };
+    } else {
+      // scope === 'public' (default)
+      // Public only
+      where.visibility = 'PUBLIC';
     }
 
     if (featured !== undefined) {
