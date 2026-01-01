@@ -14,7 +14,7 @@ import { transformPhoto, transformPhotos } from "../utils/transformers";
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = getPhotoSchema.parse(req.query);
-    const { page, limit, featured, tag, collectionId, scope } = query;
+    const { page, limit, featured, tag, collectionId, collectionSlug, scope } = query;
 
     const skip = (page - 1) * limit;
 
@@ -57,7 +57,17 @@ export const getPhotos = asyncHandler(
 
     if (collectionId) {
       where.collections = {
-        some: { id: collectionId },
+        some: { collectionId: collectionId },
+      };
+    }
+
+    if (collectionSlug) {
+      where.collections = {
+        some: {
+          collection: {
+            slug: collectionSlug
+          }
+        },
       };
     }
 

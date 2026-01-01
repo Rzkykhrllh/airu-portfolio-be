@@ -55,6 +55,7 @@ export const getPhotoSchema = z.object({
     .optional(),
   tag: z.array(z.string()).optional(),
   collectionId: z.string().optional(),
+  collectionSlug: z.string().optional(),
   scope: z.enum(['public', 'collection', 'admin']).optional().default('public'),
 });
 
