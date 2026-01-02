@@ -54,12 +54,13 @@ export const getCollections = asyncHandler(
             where: photoVisibilityFilter,
             include: {
               photo: {
-                select: {
-                  id: true,
-                  title: true,
-                  urlSmall: true,
-                  urlMedium: true,
-                  urlLarge: true,
+                include: {
+                  tags: true,
+                  collections: {
+                    include: {
+                      collection: true,
+                    },
+                  },
                 },
               },
             },
@@ -123,13 +124,13 @@ export const getCollectionsbySlug = asyncHandler(
           where: photoVisibilityFilter,
           include: {
             photo: {
-              select: {
-                id: true,
-                title: true,
-                urlSmall: true,
-                urlMedium: true,
-                urlLarge: true,
+              include: {
                 tags: true,
+                collections: {
+                  include: {
+                    collection: true,
+                  },
+                },
               },
             },
           },
