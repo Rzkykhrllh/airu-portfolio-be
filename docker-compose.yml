@@ -6,8 +6,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
-    ports:
-      - "5432:5432"
+    # ports: # Remove this line in production if using nginx as a reverse proxy
+    #   - "5432:5432" 
     env_file:
       - .env
     volumes:
@@ -19,22 +19,39 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   api:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: airu-portfolio-api
-    ports:
-      - "8080:8080"
     env_file:
       - .env
+    # ports: # Remove this line in production if using nginx as a reverse proxy
+    #   - "8080:8080"
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - airu-portfolio-network
+    restart: unless-stopped
+    # Port 8080 tidak di-expose ke host, hanya lewat nginx
+
+  nginx:
+    image: nginx:alpine
+    container_name: airu-portfolio-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
     networks:
       - airu-portfolio-network
     restart: unless-stopped
