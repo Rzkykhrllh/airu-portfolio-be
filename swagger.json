@@ -1,0 +1,729 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Airu Portfolio API",
+    "version": "1.0.0",
+    "description": "API untuk portfolio fotografi Airu"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Local development"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Basic health check",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "example": { "status": "ok", "timeStamp": "2026-06-26T12:00:00.000Z" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user/health": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Authenticated health check",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "content": {
+              "application/json": {
+                "example": { "status": "Successfully authenticated", "timeStamp": "2026-06-26T12:00:00.000Z" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/test": {
+      "get": {
+        "tags": ["Health"],
+        "summary": "Test endpoint",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "example": { "message": "API is working!" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register new user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "airu" },
+                  "password": { "type": "string", "example": "airu123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/AuthSuccess" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "409": {
+            "description": "Username already taken",
+            "content": {
+              "application/json": {
+                "example": { "message": "Username already taken" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["username", "password"],
+                "properties": {
+                  "username": { "type": "string", "example": "airu" },
+                  "password": { "type": "string", "example": "airu123" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/AuthSuccess" },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": {
+            "description": "Invalid credentials",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid credentials" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/photos": {
+      "get": {
+        "tags": ["Photos"],
+        "summary": "List photos (paginated, filterable)",
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
+          {
+            "name": "featured",
+            "in": "query",
+            "schema": { "type": "boolean" },
+            "description": "Filter by featured flag"
+          },
+          {
+            "name": "tag",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by tag name"
+          },
+          {
+            "name": "collectionId",
+            "in": "query",
+            "schema": { "type": "string", "format": "uuid" },
+            "description": "Filter by collection ID"
+          },
+          {
+            "name": "collectionSlug",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by collection slug"
+          },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["public", "collection", "admin"], "default": "public" },
+            "description": "Visibility scope filter"
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Paginated list of photos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Photo" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Photos"],
+        "summary": "Upload a new photo",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["image", "title"],
+                "properties": {
+                  "image": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Image file (jpg, png, webp, etc.), max 50MB"
+                  },
+                  "title": { "type": "string", "example": "My Photo" },
+                  "description": { "type": "string", "example": "A beautiful photo" },
+                  "location": { "type": "string", "example": "Hitachi Sea Side Park, Ibaraki, Japan" },
+                  "featured": { "type": "string", "example": "false", "description": "String boolean, e.g. 'true' or 'false'" },
+                  "visibility": {
+                    "type": "string",
+                    "enum": ["PUBLIC", "COLLECTION_ONLY", "PRIVATE"],
+                    "default": "PUBLIC"
+                  },
+                  "tags[]": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "description": "Send as multiple form fields: tags[]=Nature&tags[]=Spring"
+                  },
+                  "collectionIds[]": {
+                    "type": "array",
+                    "items": { "type": "string", "format": "uuid" },
+                    "description": "Send as multiple form fields: collectionIds[]=uuid1&collectionIds[]=uuid2"
+                  },
+                  "exif": {
+                    "type": "string",
+                    "description": "JSON string of EXIF data: {\"iso\":\"160\",\"camera\":\"Fujifilm X-S20\"}"
+                  },
+                  "capturedAt": {
+                    "type": "string",
+                    "format": "date",
+                    "example": "2025-05-03",
+                    "description": "Date photo was taken (YYYY-MM-DD)"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Photo created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Photo" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/photos/{id}": {
+      "get": {
+        "tags": ["Photos"],
+        "summary": "Get photo by ID",
+        "parameters": [
+          { "$ref": "#/components/parameters/photoId" }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Photo data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Photo" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Photos"],
+        "summary": "Update photo metadata",
+        "parameters": [
+          { "$ref": "#/components/parameters/photoId" }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "location": { "type": "string" },
+                  "featured": { "type": "boolean" },
+                  "visibility": { "type": "string", "enum": ["PUBLIC", "COLLECTION_ONLY", "PRIVATE"] },
+                  "tags": { "type": "array", "items": { "type": "string" } },
+                  "collectionIds": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+                  "capturedAt": { "type": "string", "format": "date-time" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Photo updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Photo" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Photos"],
+        "summary": "Delete photo and images from storage",
+        "parameters": [
+          { "$ref": "#/components/parameters/photoId" }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Photo deleted",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "message": "Photo deleted successfully" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/collections": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "List collections",
+        "parameters": [
+          { "$ref": "#/components/parameters/page" },
+          { "$ref": "#/components/parameters/limit" },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["public", "admin"], "default": "public" }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Paginated list of collections",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Collection" }
+                    },
+                    "pagination": { "$ref": "#/components/schemas/Pagination" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Collections"],
+        "summary": "Create a new collection",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name"],
+                "properties": {
+                  "name": { "type": "string", "example": "Hitachi Sea Side Park 2025" },
+                  "slug": { "type": "string", "example": "hitachi-sea-side-park-2025", "description": "Auto-generated from name if not provided" },
+                  "description": { "type": "string", "example": "Photos from my trip" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Collection created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Collection" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/BadRequest" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/collections/slug/{slug}": {
+      "get": {
+        "tags": ["Collections"],
+        "summary": "Get collection by slug",
+        "parameters": [
+          { "$ref": "#/components/parameters/slug" },
+          {
+            "name": "scope",
+            "in": "query",
+            "schema": { "type": "string", "enum": ["public", "admin"], "default": "public" }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Collection data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Collection" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "put": {
+        "tags": ["Collections"],
+        "summary": "Update collection by slug",
+        "parameters": [
+          { "$ref": "#/components/parameters/slug" }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Collection" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Collections"],
+        "summary": "Delete collection by slug",
+        "parameters": [
+          { "$ref": "#/components/parameters/slug" }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Collection deleted",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "message": "Collection deleted successfully" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/collections/{id}": {
+      "put": {
+        "tags": ["Collections"],
+        "summary": "Update collection by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Collection updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "data": { "$ref": "#/components/schemas/Collection" }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Collections"],
+        "summary": "Delete collection by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "format": "uuid" }
+          }
+        ],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Collection deleted",
+            "content": {
+              "application/json": {
+                "example": { "success": true, "message": "Collection deleted successfully" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /auth/login"
+      }
+    },
+    "parameters": {
+      "page": {
+        "name": "page",
+        "in": "query",
+        "schema": { "type": "integer", "default": 1 },
+        "description": "Page number"
+      },
+      "limit": {
+        "name": "limit",
+        "in": "query",
+        "schema": { "type": "integer", "default": 100 },
+        "description": "Items per page"
+      },
+      "photoId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      },
+      "slug": {
+        "name": "slug",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" }
+      }
+    },
+    "schemas": {
+      "Photo": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "location": { "type": "string", "nullable": true },
+          "featured": { "type": "boolean" },
+          "visibility": { "type": "string", "enum": ["PUBLIC", "COLLECTION_ONLY", "PRIVATE"] },
+          "sortOrder": { "type": "integer" },
+          "metadata": { "type": "object", "nullable": true },
+          "urlSmall": { "type": "string", "format": "uri" },
+          "urlMedium": { "type": "string", "format": "uri" },
+          "urlLarge": { "type": "string", "format": "uri" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "capturedAt": { "type": "string", "format": "date-time", "nullable": true },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "collections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": { "type": "string", "format": "uuid" },
+                "name": { "type": "string" },
+                "slug": { "type": "string" }
+              }
+            }
+          }
+        }
+      },
+      "Collection": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" },
+          "description": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" },
+          "photos": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Photo" }
+          },
+          "photoCount": { "type": "integer" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "totalPages": { "type": "integer" }
+        }
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "Bad request",
+        "content": {
+          "application/json": {
+            "example": { "success": false, "message": "Validation error" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing or invalid token",
+        "content": {
+          "application/json": {
+            "example": { "success": false, "message": "Access denied. No token provided." }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "example": { "success": false, "message": "Resource not found" }
+          }
+        }
+      },
+      "AuthSuccess": {
+        "description": "Authentication success",
+        "content": {
+          "application/json": {
+            "example": {
+              "success": true,
+              "message": "Login successful",
+              "token": "eyJhbGciOiJIUzI1NiIs...",
+              "user": { "id": "84eb18db-...", "username": "airu" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -18,9 +18,15 @@ export const createPhotoSchema = z.object({
     .optional()
     .default("PUBLIC"),
 
-  tags: z.array(z.string()).optional(),
+  tags: z.union([z.string(), z.array(z.string())]).optional().transform(val => {
+    if (!val) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }),
 
-  collectionIds: z.array(z.string()).optional(),
+  collectionIds: z.union([z.string(), z.array(z.string())]).optional().transform(val => {
+    if (!val) return undefined;
+    return Array.isArray(val) ? val : [val];
+  }),
 
   // Accept EXIF as JSON string, parse to object
   exif: z

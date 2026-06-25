@@ -1,5 +1,3 @@
-import is from "zod/v4/locales/is.js";
-
 export class AppError extends Error {
   constructor(
     public statusCode: number,

@@ -273,7 +273,6 @@ export const deleteCollection = asyncHandler(
 export const deleteCollectionBySlug = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { slug } = req.params;
-    console.log("slug woyyy", slug);
 
     const collection = await prisma.collections.findUnique({
       where: { slug },

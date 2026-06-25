@@ -7,8 +7,7 @@ import {
   getPhotoSchema,
   updatePhotoSchema,
 } from "../validator/photo.validator";
-import { success } from "zod";
-import { uploadImageToR2, deleteImageFromR2 } from "../services/upload.services";
+import { uploadImageToR2, deleteImageFromR2 } from "../services/r2.services";
 import { transformPhoto, transformPhotos } from "../utils/transformers";
 
 export const getPhotos = asyncHandler(
@@ -141,15 +140,6 @@ export const createPhoto = asyncHandler(
 
     const data = createPhotoSchema.parse(req.body);
     const imageUrl = await uploadImageToR2(req.file.buffer, req.file.mimetype);
-
-    // File info from multer
-    const file = req.file;
-    console.log("File received:", {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-      buffer: file.buffer.length, // File ada di memory sebagai Buffer
-    });
 
     const photo = await prisma.photo.create({
       data: {

@@ -23,8 +23,6 @@ export const transformCollections = (collections: any[]) => {
 export const transformPhoto = (photo: any) => {
   if (!photo) return null;
 
-  console.log("🔄 Transforming photo:", photo.id);
-
   return {
     id: photo.id,
     title: photo.title,
