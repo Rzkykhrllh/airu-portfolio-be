@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from "express";
 import { prisma } from "../config/prisma";
 import { asyncHandler } from "../utils/asyncHandler";
-import { NotFoundError } from "../utils/erros";
+import { NotFoundError, ValidationError } from "../utils/erros";
 import {
   createCollectionSchema,
   generateSlug,
   getCollectionSchema,
+  reorderCollectionPhotosSchema,
   updateCollectionSchema,
 } from "../validator/collection.validator";
 import { transformCollection, transformCollections } from "../utils/transformers";
@@ -52,6 +53,7 @@ export const getCollections = asyncHandler(
         include: {
           photos: {
             where: photoVisibilityFilter,
+            orderBy: { sortOrder: "asc" },
             include: {
               photo: {
                 include: {
@@ -122,6 +124,7 @@ export const getCollectionsbySlug = asyncHandler(
       include: {
         photos: {
           where: photoVisibilityFilter,
+          orderBy: { sortOrder: "asc" },
           include: {
             photo: {
               include: {
@@ -289,6 +292,74 @@ export const deleteCollectionBySlug = asyncHandler(
     res.json({
       success: true,
       message: "Collection deleted successfully",
+    });
+  }
+);
+
+export const reorderCollectionPhotos = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
+    const { photoIds } = reorderCollectionPhotosSchema.parse(req.body);
+
+    const collection = await prisma.collections.findUnique({
+      where: { slug },
+      include: {
+        photos: { select: { photoId: true } },
+      },
+    });
+
+    if (!collection) {
+      throw new NotFoundError("Collection not found");
+    }
+
+    const existingPhotoIds = new Set(collection.photos.map((p) => p.photoId));
+    const unknownIds = photoIds.filter((id) => !existingPhotoIds.has(id));
+
+    if (unknownIds.length > 0) {
+      throw new ValidationError(
+        `Photos not in this collection: ${unknownIds.join(", ")}`
+      );
+    }
+
+    await prisma.$transaction(
+      photoIds.map((photoId, index) =>
+        prisma.photoCollections.update({
+          where: {
+            photoId_collectionId: {
+              photoId,
+              collectionId: collection.id,
+            },
+          },
+          data: { sortOrder: index },
+        })
+      )
+    );
+
+    const updatedCollection = await prisma.collections.findUnique({
+      where: { slug },
+      include: {
+        photos: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            photo: {
+              include: {
+                tags: true,
+                collections: {
+                  include: {
+                    collection: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+        _count: { select: { photos: true } },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: transformCollection(updatedCollection),
     });
   }
 );

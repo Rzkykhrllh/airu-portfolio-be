@@ -86,6 +86,7 @@ model Collections{
 model PhotoCollections{
   photoId String @map("photo_id")
   collectionId String @map("collection_id")
+  sortOrder Int @default(0) @map("sort_order")
 
   photo Photo @relation(fields: [photoId], references: [id], onDelete: Cascade)
   collection Collections @relation(fields: [collectionId], references: [id], onDelete: Cascade)

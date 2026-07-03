@@ -25,3 +25,7 @@ export const updateCollectionSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional(),
 });
+
+export const reorderCollectionPhotosSchema = z.object({
+  photoIds: z.array(z.string()).min(1, "photoIds must not be empty"),
+});
