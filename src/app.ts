@@ -5,6 +5,7 @@ import { timeStamp } from "console";
 import authRoutes from "./routes/auth.routes";
 import photoRoutes from "./routes/photo.routes";
 import collectionRoutes from "./routes/collection.routes";
+import inquiryRoutes from "./routes/inquiry.routes";
 import { authenticateToken } from "./middlewares/auth.middleware";
 import { errorHandler } from "./middlewares/error.middleware";
 
@@ -34,6 +35,7 @@ app.use(express.urlencoded({extended: true }))
 app.use("/auth", authRoutes);
 app.use("/photos", photoRoutes);
 app.use("/collections", collectionRoutes);
+app.use("/inquiries", inquiryRoutes);
 
 
 app.get("/user/health", authenticateToken, (req, res) => {

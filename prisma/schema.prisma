@@ -95,3 +95,15 @@ model PhotoCollections{
   @@index([collectionId])
   @@map("photo_collections")
 }
+
+model Inquiry {
+  id          String   @id @default(uuid())
+  name        String
+  email       String
+  projectType String?  @map("project_type")
+  message     String
+  read        Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("inquiries")
+}
