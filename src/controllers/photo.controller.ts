@@ -173,8 +173,14 @@ export const getPhotoById = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 
-    const photo = await prisma.photo.findUnique({
-      where: { id }, //Get Photo by Id
+    // Unauthenticated callers only ever get PUBLIC photos — this route is
+    // registered with optionalAuth, but until now the visibility check was
+    // never actually applied here (unlike the list endpoint), so anyone
+    // with a PRIVATE/COLLECTION_ONLY photo's id could fetch its full data.
+    const isAuthenticated = !!(req as any).user;
+
+    const photo = await prisma.photo.findFirst({
+      where: isAuthenticated ? { id } : { id, visibility: "PUBLIC" },
       include: {
         tags: true, // Include associated tags
         collections: {
