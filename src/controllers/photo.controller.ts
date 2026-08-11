@@ -8,6 +8,7 @@ import {
   updatePhotoSchema,
 } from "../validator/photo.validator";
 import { uploadImageToR2, deleteImageFromR2 } from "../services/r2.services";
+import { getDailyPublicOrder } from "../services/dailyOrder.service";
 import { transformPhoto, transformPhotos } from "../utils/transformers";
 
 export const getPhotos = asyncHandler(
@@ -79,6 +80,53 @@ export const getPhotos = asyncHandler(
         { location: { contains: search, mode: "insensitive" } },
         { tags: { some: { tag: { contains: search, mode: "insensitive" } } } },
       ];
+    }
+
+    // Plain public gallery (no narrowing filters): serve the precomputed
+    // daily-shuffled, collection-diverse order instead of createdAt desc,
+    // so the homepage doesn't clump by upload batch/theme. Any filter
+    // (tag/collection/search/featured) falls back to normal ordering below,
+    // since slicing the daily order and then filtering further would break
+    // pagination (fewer than `limit` results per page, uneven skip/take).
+    const isPlainPublicGallery =
+      scope === "public" &&
+      featured === undefined &&
+      !tag &&
+      !collectionId &&
+      !collectionSlug &&
+      !search;
+
+    if (isPlainPublicGallery) {
+      const order = await getDailyPublicOrder();
+      const total = order.length;
+      const pageIds = order.slice(skip, skip + limit);
+
+      const rows = pageIds.length
+        ? await prisma.photo.findMany({
+            where: { id: { in: pageIds } },
+            include: {
+              tags: true,
+              collections: { include: { collection: true } },
+            },
+          })
+        : [];
+
+      // Prisma doesn't preserve `IN` order — re-sort to match the daily slice.
+      const byId = new Map(rows.map((row) => [row.id, row]));
+      const photos = pageIds
+        .map((id) => byId.get(id))
+        .filter((photo): photo is (typeof rows)[number] => Boolean(photo));
+
+      return res.json({
+        success: true,
+        data: transformPhotos(photos),
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
     }
 
     const orderByMap: Record<typeof sort, any> = {
