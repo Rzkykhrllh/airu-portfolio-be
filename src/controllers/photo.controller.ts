@@ -13,7 +13,7 @@ import { transformPhoto, transformPhotos } from "../utils/transformers";
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = getPhotoSchema.parse(req.query);
-    const { page, limit, featured, tag, collectionId, collectionSlug, scope } = query;
+    const { page, limit, featured, tag, collectionId, collectionSlug, scope, search, sort, visibility } = query;
 
     const skip = (page - 1) * limit;
 
@@ -33,8 +33,11 @@ export const getPhotos = asyncHandler(
 
     // Filter by scope (visibility levels)
     if (scope === 'admin') {
-      // Admin (authenticated): show ALL photos (no filter)
-      // where.visibility = undefined (no filter)
+      // Admin (authenticated): show ALL photos by default, narrowed by
+      // an explicit visibility filter if provided (admin-only filter UI)
+      if (visibility) {
+        where.visibility = visibility;
+      }
     } else if (scope === 'collection') {
       // Public + Collection only
       where.visibility = { in: ['PUBLIC', 'COLLECTION_ONLY'] };
@@ -70,12 +73,26 @@ export const getPhotos = asyncHandler(
       };
     }
 
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: "insensitive" } },
+        { location: { contains: search, mode: "insensitive" } },
+        { tags: { some: { tag: { contains: search, mode: "insensitive" } } } },
+      ];
+    }
+
+    const orderByMap: Record<typeof sort, any> = {
+      newest: { createdAt: "desc" },
+      oldest: { createdAt: "asc" },
+      title: { title: "asc" },
+    };
+
     const [photos, total] = await Promise.all([
       prisma.photo.findMany({
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: "desc" },
+        orderBy: orderByMap[sort],
         include: {
           tags: true,
           collections: {

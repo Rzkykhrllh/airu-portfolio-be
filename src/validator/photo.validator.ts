@@ -63,6 +63,9 @@ export const getPhotoSchema = z.object({
   collectionId: z.string().optional(),
   collectionSlug: z.string().optional(),
   scope: z.enum(['public', 'collection', 'admin']).optional().default('public'),
+  search: z.string().optional(),
+  sort: z.enum(['newest', 'oldest', 'title']).optional().default('newest'),
+  visibility: z.enum(["PUBLIC", "COLLECTION_ONLY", "PRIVATE"]).optional(),
 });
 
 export const updatePhotoSchema = z.object({
