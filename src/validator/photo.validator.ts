@@ -66,6 +66,10 @@ export const getPhotoSchema = z.object({
   search: z.string().optional(),
   sort: z.enum(['newest', 'oldest', 'title']).optional().default('newest'),
   visibility: z.enum(["PUBLIC", "COLLECTION_ONLY", "PRIVATE"]).optional(),
+  // Escape hatch for the plain public gallery query: defaults to the daily
+  // diverse-random order, pass order=chronological to fall back to `sort`
+  // (createdAt desc by default) without a redeploy.
+  order: z.enum(['daily-random', 'chronological']).optional().default('daily-random'),
 });
 
 export const updatePhotoSchema = z.object({

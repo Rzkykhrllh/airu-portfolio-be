@@ -14,7 +14,7 @@ import { transformPhoto, transformPhotos } from "../utils/transformers";
 export const getPhotos = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
     const query = getPhotoSchema.parse(req.query);
-    const { page, limit, featured, tag, collectionId, collectionSlug, scope, search, sort, visibility } = query;
+    const { page, limit, featured, tag, collectionId, collectionSlug, scope, search, sort, visibility, order } = query;
 
     const skip = (page - 1) * limit;
 
@@ -88,8 +88,11 @@ export const getPhotos = asyncHandler(
     // (tag/collection/search/featured) falls back to normal ordering below,
     // since slicing the daily order and then filtering further would break
     // pagination (fewer than `limit` results per page, uneven skip/take).
+    // order=chronological is an explicit escape hatch back to the old
+    // behavior (sort param, createdAt desc by default) with no redeploy.
     const isPlainPublicGallery =
       scope === "public" &&
+      order === "daily-random" &&
       featured === undefined &&
       !tag &&
       !collectionId &&
