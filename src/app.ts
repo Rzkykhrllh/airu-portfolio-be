@@ -10,6 +10,12 @@ import { errorHandler } from "./middlewares/error.middleware";
 
 const app = express();
 
+// Behind Nginx (single reverse-proxy hop per DEPLOYMENT-GUIDE.md) — trust its
+// X-Forwarded-For so req.ip (and express-rate-limit's default key) resolves
+// to the real client IP instead of the proxy's, and so it doesn't reject
+// requests as an unexpected/spoofable forwarded-for header.
+app.set("trust proxy", 1);
+
 // Middlewares
 
 // Security middleware
