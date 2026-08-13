@@ -39,6 +39,7 @@ model Photo{
   visibility PhotoVisibility @default(PUBLIC)
   sortOrder Int @default(0) @map("sort_order")
   metadata Json? @default("{}")
+  viewCount Int @default(0) @map("view_count")
 
   // Three Size of the photo URLs
   urlSmall String @map("url_small")

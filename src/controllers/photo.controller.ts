@@ -136,6 +136,7 @@ export const getPhotos = asyncHandler(
       newest: { createdAt: "desc" },
       oldest: { createdAt: "asc" },
       title: { title: "asc" },
+      views: { viewCount: "desc" },
     };
 
     const [photos, total] = await Promise.all([
@@ -199,6 +200,21 @@ export const getPhotoById = asyncHandler(
       success: true,
       data: transformPhoto(photo),
     });
+
+    // Count real visitor views only — admin (authenticated) reads while
+    // editing/previewing in the dashboard shouldn't inflate the counter.
+    // Fired after the response is sent so a slow/failed write never delays
+    // or breaks the page load; errors are swallowed for the same reason.
+    if (!isAuthenticated) {
+      prisma.photo
+        .update({
+          where: { id: photo.id },
+          data: { viewCount: { increment: 1 } },
+        })
+        .catch((err) => {
+          console.error("Failed to increment photo view count:", err);
+        });
+    }
   }
 );
 

@@ -64,7 +64,7 @@ export const getPhotoSchema = z.object({
   collectionSlug: z.string().optional(),
   scope: z.enum(['public', 'collection', 'admin']).optional().default('public'),
   search: z.string().optional(),
-  sort: z.enum(['newest', 'oldest', 'title']).optional().default('newest'),
+  sort: z.enum(['newest', 'oldest', 'title', 'views']).optional().default('newest'),
   visibility: z.enum(["PUBLIC", "COLLECTION_ONLY", "PRIVATE"]).optional(),
   // Escape hatch for the plain public gallery query: defaults to the daily
   // diverse-random order, pass order=chronological to fall back to `sort`
