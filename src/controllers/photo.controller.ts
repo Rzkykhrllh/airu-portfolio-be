@@ -122,7 +122,7 @@ export const getPhotos = asyncHandler(
 
       return res.json({
         success: true,
-        data: transformPhotos(photos),
+        data: transformPhotos(photos, isAuthenticated),
         pagination: {
           page,
           limit,
@@ -159,7 +159,7 @@ export const getPhotos = asyncHandler(
 
     res.json({
       success: true,
-      data: transformPhotos(photos),
+      data: transformPhotos(photos, isAuthenticated),
       pagination: {
         page,
         limit,
@@ -198,7 +198,7 @@ export const getPhotoById = asyncHandler(
 
     res.json({
       success: true,
-      data: transformPhoto(photo),
+      data: transformPhoto(photo, isAuthenticated),
     });
 
     // Count real visitor views only — admin (authenticated) reads while

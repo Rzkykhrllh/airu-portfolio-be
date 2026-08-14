@@ -1,4 +1,4 @@
-export const transformCollection = (collection: any) => {
+export const transformCollection = (collection: any, includeViewCount = false) => {
   return {
     id: collection.id,
     name: collection.name,
@@ -6,21 +6,27 @@ export const transformCollection = (collection: any) => {
     description: collection.description,
     createdAt: collection.createdAt,
     updatedAt: collection.updatedAt,
-    photos: collection.photos?.map((cp: any) => transformPhoto(cp.photo)) || [], // Transform photos with full data
+    photos: collection.photos?.map((cp: any) => transformPhoto(cp.photo, includeViewCount)) || [], // Transform photos with full data
     photoCount: collection._count?.photos,
   };
 }
 
-export const transformCollections = (collections: any[]) => {
-  return collections.map(transformCollection);
+export const transformCollections = (collections: any[], includeViewCount = false) => {
+  return collections.map((c) => transformCollection(c, includeViewCount));
 }
 
 /**
  * Transform photo response to flatten collections
  * Converts: collections[{ photoId, collectionId, collection: {...} }]
  * To: collectionIds[string]
+ *
+ * `includeViewCount` defaults to false (opt-in, not opt-out) so the view
+ * counter — a number the owner explicitly wants kept private, not shown
+ * to visitors — never leaks into a public/unauthenticated API response
+ * even if a caller forgets to pass the flag. Only the admin-authenticated
+ * paths in photo.controller.ts pass `true`.
  */
-export const transformPhoto = (photo: any) => {
+export const transformPhoto = (photo: any, includeViewCount = false) => {
   if (!photo) return null;
 
   return {
@@ -32,7 +38,7 @@ export const transformPhoto = (photo: any) => {
     visibility: photo.visibility,
     sortOrder: photo.sortOrder,
     metadata: photo.metadata,
-    viewCount: photo.viewCount,
+    ...(includeViewCount ? { viewCount: photo.viewCount } : {}),
     urlSmall: photo.urlSmall,
     urlMedium: photo.urlMedium,
     urlLarge: photo.urlLarge,
@@ -51,6 +57,6 @@ export const transformPhoto = (photo: any) => {
 /**
  * Transform array of photos
  */
-export const transformPhotos = (photos: any[]) => {
-  return photos.map(transformPhoto);
+export const transformPhotos = (photos: any[], includeViewCount = false) => {
+  return photos.map((p) => transformPhoto(p, includeViewCount));
 }

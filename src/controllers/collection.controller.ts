@@ -75,7 +75,7 @@ export const getCollections = asyncHandler(
 
     res.json({
       success: true,
-      data: transformCollections(collections),
+      data: transformCollections(collections, isAuthenticated),
       pagination: {
         page,
         limit,
@@ -148,7 +148,7 @@ export const getCollectionsbySlug = asyncHandler(
 
     res.json({
       success: true,
-      data: transformCollection(collection),
+      data: transformCollection(collection, isAuthenticated),
     });
   }
 );
